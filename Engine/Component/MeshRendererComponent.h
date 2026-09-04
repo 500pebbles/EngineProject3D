@@ -3,7 +3,7 @@
 #include "PrimitiveComponent.h"
 #include "Shape/Mesh.h"
 
-class ENGINE_API UMeshRendererComponent : UPrimitiveComponent
+class ENGINE_API UMeshRendererComponent : public UPrimitiveComponent
 {
 public:
     TYPE_DECLARATIONS(UMeshRendererComponent, UPrimitiveComponent)

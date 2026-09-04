@@ -9,6 +9,7 @@
 #include "RenderPosition.h"
 
 
+class UCameraComponent;
 class ScreenBuffer;
 
 class ENGINE_API Renderer3D
@@ -49,7 +50,7 @@ public:
     ~Renderer3D();
     
     static Renderer3D& Get();
-
+    
 /* Draw Console */    
 public:
     void Submit(const Mesh& mesh, const Matrix4& worldMatrix);
@@ -74,6 +75,12 @@ private:
 
     ScreenVertex Project(const Vector3& viewPosition) const;
     
+    
+/* Camera */    
+public:
+    void SetCamera(const std::shared_ptr<UCameraComponent>& newCamera) { cameraComponent = newCamera; }
+
+    
 private:
     static Renderer3D* instance;
     
@@ -84,7 +91,7 @@ private:
     std::unique_ptr<ScreenBuffer> screenBufferArray[2];
     int currentBufferIndex = 0;
     
-    Camera camera;
+    std::shared_ptr<UCameraComponent> cameraComponent;
     float focalLength = 1.0f;
 };
 

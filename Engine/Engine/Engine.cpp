@@ -5,6 +5,7 @@
 #include <iostream>
 #include <Windows.h>
 #include <cassert>
+#include "Render/Renderer3D.h" 
 #include "World/World.h"
 
 Engine* Engine::instance = nullptr;
@@ -17,7 +18,7 @@ Engine::Engine()
 	LoadEngineSetting();
 
 	input = std::make_unique<Input>();
-	renderer = std::make_unique<Renderer>(RenderPosition(setting.width, setting.height));
+	renderer = std::make_unique<Renderer3D>(RenderPosition(setting.width, setting.height));
 	collisionSystem = std::make_unique<CollisionSystem>();
 }
 

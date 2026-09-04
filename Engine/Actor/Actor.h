@@ -39,7 +39,13 @@ public:
 				
 public:
 	Vector3 GetActorLocation() const;
+	Vector3 GetActorRotation() const;
+	Vector3 GetActorScale() const;
+	
 	void SetActorLocation(const Vector3& newLocation);
+	void SetActorRotation(const Vector3& newRotation);
+	void SetActorScale(const Vector3& newScale);
+	
 	Matrix4 GetActorWorldMatrix() const;
 	
 public:
@@ -113,4 +119,4 @@ public:
 		// 두 리스트에 모두 없다면 return null 
 		return nullptr;
 	}
-};	
+};

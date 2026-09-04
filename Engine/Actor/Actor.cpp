@@ -1,7 +1,6 @@
 ﻿#include "Actor.h"
 #include <Engine/Engine.h>
 #include <Render/Renderer.h>
-
 #include "Component/SceneComponent.h"
 
 
@@ -137,12 +136,42 @@ Vector3 AActor::GetActorLocation() const
 	return rootComponent->GetWorldLocation();
 }
 
+Vector3 AActor::GetActorRotation() const
+{
+	if (!rootComponent) return Vector3::Zero;
+
+	return rootComponent->GetRelativeRotation();
+}
+
+Vector3 AActor::GetActorScale() const
+{
+	if (!rootComponent) return Vector3::Zero;
+
+	return rootComponent->GetRelativeScale();
+}
+
 void AActor::SetActorLocation(const Vector3& newLocation)
 {
 	if (!rootComponent) return;
 	if (GetActorLocation() == newLocation) return;
 
 	rootComponent->SetWorldLocation(newLocation);
+}
+
+void AActor::SetActorRotation(const Vector3& newRotation)
+{
+	if (!rootComponent) return;
+	if (GetActorRotation() == newRotation) return;
+
+	rootComponent->SetRelativeRotation(newRotation);
+}
+
+void AActor::SetActorScale(const Vector3& newScale)
+{
+	if (!rootComponent) return;
+	if (GetActorScale() == newScale) return;
+
+	rootComponent->SetRelativeScale(newScale);
 }
 
 Matrix4 AActor::GetActorWorldMatrix() const

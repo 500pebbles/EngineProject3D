@@ -166,14 +166,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Actor\TestActor.cpp" />
-    <ClCompile Include="Actor\WallActor.cpp" />
+    <ClCompile Include="Actor\CubeActor.cpp" />
+    <ClCompile Include="Actor\PlayerActor.cpp" />
     <ClCompile Include="World\TestWorld.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Actor\TestActor.h" />
-    <ClInclude Include="Actor\WallActor.h" />
+    <ClInclude Include="Actor\CubeActor.h" />
+    <ClInclude Include="Actor\PlayerActor.h" />
     <ClInclude Include="World\TestWorld.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,6 +3,7 @@
 #include <Core/Core.h>
 #include <memory>	
 
+class Renderer3D;
 class UWorld;
 class ULevel;
 class Input;
@@ -77,7 +78,7 @@ protected:
 	
 	std::unique_ptr<Input> input;
 
-	std::unique_ptr<Renderer> renderer;	
+	std::unique_ptr<Renderer3D> renderer;	
 		
 	std::unique_ptr<CollisionSystem> collisionSystem;
 	

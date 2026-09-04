@@ -8,6 +8,7 @@
 #include <Windows.h>
 
 #include "ScreenBuffer.h"
+#include "Component/CameraComponent.h"
 
 
 // -------------------------- Frame -------------------------- //
@@ -26,20 +27,17 @@ void Renderer3D::Frame::Clear(const RenderPosition& screenSize)
     {
         charInfoArray[index].Char.AsciiChar = ' ';
         charInfoArray[index].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-
-        /* inverseDepth는 값이 클수록 카메라와 가깝다. */
-        depthBuffer[index] = 0.0f;
+        depthBuffer[index] = 0.0f; // depth값이 클수록 카메라와 가까움
     }
 }
 
 
-// ------------------------ Renderer3D ----------------------- //
+// -------------------------- Renderer -------------------------- //
 
 Renderer3D* Renderer3D::instance = nullptr;
 
 Renderer3D::Renderer3D(const RenderPosition& screenSize)
-    : screenSize(screenSize),
-      camera(Vector3{3.0f, 2.0f, -4.0f}, Vector3{0.0f, 0.0f, 0.0f})
+    : screenSize(screenSize)    
 {
     assert(!instance && "Renderer3D instance already exists");
     instance = this;
@@ -79,8 +77,6 @@ Renderer3D& Renderer3D::Get()
 }
 
 
-// ------------------------- Submit -------------------------- //
-
 void Renderer3D::Submit(const Mesh& mesh, const Matrix4& worldMatrix)
 {
     RenderCommand command;
@@ -89,9 +85,6 @@ void Renderer3D::Submit(const Mesh& mesh, const Matrix4& worldMatrix)
 
     renderQueue.emplace_back(command);
 }
-
-
-// -------------------------- Draw --------------------------- //
 
 void Renderer3D::Draw()
 {
@@ -106,13 +99,13 @@ void Renderer3D::Clear()
     GetCurrentBuffer()->Clear();
 }
 
-
-// ---------------------- DrawRenderQueue -------------------- //
-
 void Renderer3D::DrawRenderQueue()
 {
     const Vector3 lightDirection = Vector3{-0.4f, 1.0f, -0.6f}.Normalized();
-    const Matrix4& viewMatrix = camera.GetViewMatrix();
+    const std::shared_ptr<UCameraComponent> camera = cameraComponent;
+    if (!camera) return;
+
+    const Matrix4 viewMatrix = camera->GetViewMatrix();
 
     for (const RenderCommand& command : renderQueue)
     {
@@ -120,12 +113,8 @@ void Renderer3D::DrawRenderQueue()
 
         const Mesh& mesh = *command.mesh;
 
-        /* ================================
-         * Step 1 : Local Space → World Space
-         * ================================ */
-
+        /* World Matrix 좌표계 변환 */
         const std::vector<Vector3>& vertices = mesh.GetVertices();
-
         std::vector<Vector3> worldVertices;
         worldVertices.reserve(vertices.size());
 
@@ -135,73 +124,38 @@ void Renderer3D::DrawRenderQueue()
             worldVertices.emplace_back(worldVertex);
         }
 
-
-        /* ================================
-         * Step 2 : Triangle 단위 처리
-         * ================================ */
-
+        /* World 좌표계 기준 버텍스들 좌표계변환(World->Camera->Projection) 후 Draw 처리 */
         for (const TriangleIndex& triangle : mesh.GetTriangles())
         {
             const Vector3& world0 = worldVertices[triangle.indices[0]];
             const Vector3& world1 = worldVertices[triangle.indices[1]];
             const Vector3& world2 = worldVertices[triangle.indices[2]];
 
-
-            /* ================================
-             * Step 3 : World Space → View Space
-             * ================================ */
-
+            /* View Matrix 좌표계변환 */
             const Vector3 view0 = world0 * viewMatrix;
             const Vector3 view1 = world1 * viewMatrix;
             const Vector3 view2 = world2 * viewMatrix;
 
-
-            /* ================================
-             * Step 4 : Near Plane 검사
-             * ================================ */
-
+            /* Near Plane 컬링 */
             constexpr float nearPlane = 0.1f;
+            if (view0.z <= nearPlane || view1.z <= nearPlane || view2.z <= nearPlane) continue;
 
-            if (view0.z <= nearPlane || view1.z <= nearPlane || view2.z <= nearPlane)
-            {
-                continue;
-            }
-
-
-            /* ================================
-             * Step 5 : Back-Face Culling
-             * ================================ */
-
+            /* Back 컬링 */
             const Vector3 viewNormal = (view1 - view0).Cross(view2 - view0).Normalized();
-
             if (viewNormal.z >= 0.0f) continue;
 
-
-            /* ================================
-             * Step 6 : Lighting
-             * ================================ */
-
+            /* 광원 처리로 문자열 설정 */
             const Vector3 worldNormal = (world1 - world0).Cross(world2 - world0).Normalized();
-
             const float diffuse = std::max(0.0f, worldNormal.Dot(lightDirection));
-
             constexpr float ambientLight = 0.2f;
             const float brightness = ambientLight + (1.0f - ambientLight) * diffuse;
 
-
-            /* ================================
-             * Step 7 : View Space → Screen Space
-             * ================================ */
-
+            /* Projection Matrix 좌표계 변환 */
             const ScreenVertex screen0 = Project(view0);
             const ScreenVertex screen1 = Project(view1);
             const ScreenVertex screen2 = Project(view2);
 
-
-            /* ================================
-             * Step 8 : Rasterization
-             * ================================ */
-
+            /* Rasterize */
             DrawTriangle(screen0, screen1, screen2, GetShadeCharacter(brightness));
         }
     }
@@ -213,9 +167,6 @@ void Renderer3D::DrawRenderQueue()
     /* 이번 프레임 RenderCommand 제거 */
     renderQueue.clear();
 }
-
-
-// ------------------------ Projection ----------------------- //
 
 Renderer3D::ScreenVertex Renderer3D::Project(const Vector3& viewPosition) const
 {
@@ -231,13 +182,7 @@ Renderer3D::ScreenVertex Renderer3D::Project(const Vector3& viewPosition) const
 }
 
 
-// ---------------------- Rasterization ---------------------- //
-
-void Renderer3D::DrawTriangle(
-    const ScreenVertex& v0,
-    const ScreenVertex& v1,
-    const ScreenVertex& v2,
-    char character)
+void Renderer3D::DrawTriangle(const ScreenVertex& v0, const ScreenVertex& v1, const ScreenVertex& v2,char character)
 {
     /* 삼각형을 완전히 감싸는 최소 Bounding Box */
     const int minX = std::max(0, static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x}))));
@@ -275,9 +220,6 @@ void Renderer3D::DrawTriangle(
     }
 }
 
-
-// ------------------------- SetPixel ------------------------ //
-
 void Renderer3D::SetPixel(int x, int y, float inverseDepth, char character)
 {
     if (x < 0 || x >= screenSize.x) return;
@@ -285,10 +227,6 @@ void Renderer3D::SetPixel(int x, int y, float inverseDepth, char character)
 
     const int index = y * screenSize.x + x;
 
-    /*
-     * inverseDepth는 값이 클수록 가까움.
-     * 기존 값보다 작거나 같으면 이미 더 가까운 Pixel이 있음.
-     */
     if (inverseDepth <= frame->depthBuffer[index]) return;
 
     frame->depthBuffer[index] = inverseDepth;
@@ -297,8 +235,6 @@ void Renderer3D::SetPixel(int x, int y, float inverseDepth, char character)
     frame->charInfoArray[index].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 }
 
-
-// --------------------------- Edge -------------------------- //
 
 float Renderer3D::Edge(
     const ScreenVertex& start,
@@ -309,8 +245,6 @@ float Renderer3D::Edge(
     return (x - start.x) * (end.y - start.y) - (y - start.y) * (end.x - start.x);
 }
 
-
-// -------------------------- Shade -------------------------- //
 
 char Renderer3D::GetShadeCharacter(float brightness)
 {
@@ -324,18 +258,12 @@ char Renderer3D::GetShadeCharacter(float brightness)
     return shadeCharacters[index];
 }
 
-
-// ------------------------- Present ------------------------- //
-
 void Renderer3D::Present()
 {
     SetConsoleActiveScreenBuffer(GetCurrentBuffer()->GetBuffer());
 
     currentBufferIndex = 1 - currentBufferIndex;
 }
-
-
-// -------------------- Current ScreenBuffer ----------------- //
 
 ScreenBuffer* Renderer3D::GetCurrentBuffer()
 {
