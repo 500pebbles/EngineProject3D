@@ -6,7 +6,7 @@ class ENGINE_API ACharacter : public APawn
     TYPE_DECLARATIONS(ACharacter, APawn)
     
 public:
-    ACharacter(const Vector2& location);        
+    ACharacter(const Vector3& location);        
     
 protected:    
     std::shared_ptr<UBoxComponent> collisionComponent;

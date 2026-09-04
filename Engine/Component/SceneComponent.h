@@ -1,34 +1,42 @@
 ﻿#pragma once
 #include "ActorComponent.h"
+#include "Math/Matrix4.h"
 #include "Math/Vector2.h"
+#include "Math/Vector3.h"
 
 class ENGINE_API USceneComponent : public UActorComponent
 {
     TYPE_DECLARATIONS(USceneComponent, UActorComponent)
 
 public:
-    USceneComponent(const Vector2& relativeLocation = Vector2::Zero);
+    USceneComponent() = default;
+    USceneComponent(const Vector3& relativeLocation);
     virtual ~USceneComponent() = default;
     
-    /* 컴포넌트의 월드위치 */
-    Vector2 GetComponentLocation() const;
-    void SetWorldLocation(const Vector2& newLocation);
+public:
+    const Vector3& GetRelativeLocation() const { return relativeLocation; }
+    const Vector3& GetRelativeRotation() const { return relativeRotation; }
+    const Vector3& GetRelativeScale() const { return relativeScale; }
     
-    /* 컴포넌트의 부모기준 상대위치 */
-    Vector2 GetRelativeLocation() const { return relativeLocation; }
-    void SetRelativeLocation(const Vector2& newLocation) { relativeLocation = newLocation; }
+    void SetRelativeLocation(const Vector3& location) { relativeLocation = location; }
+    void SetRelativeRotation(const Vector3& rotation) { relativeRotation = rotation; }
+    void SetRelativeScale(const Vector3& scale) { relativeScale = scale; }
+
+    Matrix4 GetLocalMatrix() const;
+    Matrix4 GetWorldMatrix() const;
     
-    /* 이전 프레임의 컴포넌트 월드위치 */
-    Vector2 GetPreviousComponentLocation() const { return previousComponentLocation; }
-    void SetPreviousComponentLocation(const Vector2& newLocation) { previousComponentLocation = newLocation; }
+    Vector3 GetWorldLocation() const;
+    void SetWorldLocation(const Vector3& location);    
     
-    /* 컴포넌트를 소유한 액터가 부착된 액터 */
-    inline std::shared_ptr<USceneComponent> GetAttachParent() const { return attachParent.lock(); }
-    inline void SetParent(std::weak_ptr<USceneComponent> newParent) { attachParent = newParent; }
+public:
+    /* 이 컴포넌트를 소유한 액터의 부모 액터 */
+    std::shared_ptr<USceneComponent> GetAttachParent() const { return attachParent.lock(); }
+    void SetAttachParent(std::weak_ptr<USceneComponent> newParent) { attachParent = newParent; }
     
 protected:
-    Vector2 relativeLocation;
-    Vector2 previousComponentLocation;
-    
+    Vector3 relativeLocation { 0.0f, 0.0f, 0.0f };
+    Vector3 relativeRotation { 0.0f, 0.0f, 0.0f };
+    Vector3 relativeScale    { 1.0f, 1.0f, 1.0f };
+
     std::weak_ptr<USceneComponent> attachParent;
 };

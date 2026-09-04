@@ -59,9 +59,7 @@ public:
     
 protected:
     void ProcessAddAndDestroyActors();
-
-    void SavePreviousActorStates();	
-
+    
 protected:    
     std::shared_ptr<ULevel> persistentLevel; 
     

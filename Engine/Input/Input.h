@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include <Core/Core.h>
-
 #include "Actor/Actor.h"
+#include "Component/BoxComponent.h"
 
 class Vector2;
 

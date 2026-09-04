@@ -53,11 +53,3 @@ void UWorld::ProcessAddAndDestroyActors()
         level->ProcessAddAndDestroyActors();
     }
 }
-
-void UWorld::SavePreviousActorStates()
-{
-    for (auto level : levels)
-    {
-        level->SavePreviousActorStates();
-    }
-}

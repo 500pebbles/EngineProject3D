@@ -76,10 +76,9 @@ void Engine::Run()
 				nextWorld.reset();
 			}
 			
-			if (mainWorld)	  // 액터 추가삭제 및 상태 저장
+			if (mainWorld)	  // 액터 추가삭제
 			{
 				mainWorld->ProcessAddAndDestroyActors();
-				mainWorld->SavePreviousActorStates();
 			}
 
 			SavePreviousInputStates();  // 현재 프레임의 키 입력 정보들을 전부 저장 (다음 프레임과 비교를 위해)

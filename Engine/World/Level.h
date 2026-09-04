@@ -27,8 +27,6 @@ public:
 
 protected:
 	void ProcessAddAndDestroyActors();
-
-	void SavePreviousActorStates();	
 	
 public:
 	std::vector<std::shared_ptr<AActor>> actors;

@@ -1,5 +1,7 @@
 ﻿#include "RenderPosition.h"
 
+#include "Component/BoxComponent.h"
+
 RenderPosition::RenderPosition(int x, int y) noexcept
     : x(x), y(y)
 {

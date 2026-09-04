@@ -5,7 +5,7 @@
 #include "Component/SceneComponent.h"
 
 
-AActor::AActor(const Vector2& location) : initialLocation(location)
+AActor::AActor(const Vector3& location) : initialLocation(location)
 {
 	
 }	
@@ -41,7 +41,6 @@ void AActor::Draw()
 		
 	for (const std::shared_ptr<UActorComponent>& component : ownedComponents)
 	{
-		// 다른 컴포넌트의 Draw()는 비워져있지만 SpriteComponent는 렌더링 정보값들을 Submit
 		component->Draw();  
 	}
 }	
@@ -49,7 +48,7 @@ void AActor::Draw()
 void AActor::OnCollision(const std::shared_ptr<AActor>& other)
 {
 	/* 엔진의 Run중 도중 collisionSystem->ProcessCollision 으로 호출
-	 * 엔진은 메인 레벨의 모든 액터를 상대로, 현재&이전 위치를 체크 후 최악을 상정해 겹쳐있는 액터를 전부 저장함
+	 * 엔진은 메인 레벨의 모든 액터를 상대로, 현재위치를 체크 후 겹쳐있는 액터를 전부 저장함
 	 * 그 후 저장된 액터의 OnCollision을 양쪽 모두에게 호출
 	 * 세부 내용은 해당 액터에서, 상태 액터의 타입을 검사해 타입별로 다른 행동문 작성  
 	 * 주의 : 한쪽이 다른쪽을 Destroy()하는 등 이미 처리한다면, 다른쪽에서는 행동 지정 x */
@@ -81,53 +80,46 @@ void AActor::QuitGame()
 }
 
 
-void AActor::AttachToActor(const std::shared_ptr<AActor>& newParent, bool keepWorldLocation)
+void AActor::AttachToActor(const std::shared_ptr<AActor>& newParent)
 {
-	if (!newParent || newParent.get() == this) return;
-		
+	if (!newParent || newParent.get() == this || !rootComponent) return;
+	
 	DetachFromActor();
 		
 	attachParentActor = newParent;
 	newParent->attachedActors.emplace_back(weak_from_this());
-		
-	if (rootComponent && newParent->GetRootComponent())
-	{
-		Vector2 worldLocation = rootComponent->GetComponentLocation();
-		rootComponent->SetParent(newParent->GetRootComponent());
-
-		if (keepWorldLocation) rootComponent->SetWorldLocation(worldLocation); 
-	}
+	
+	const std::shared_ptr<USceneComponent> parentRoot = newParent->GetRootComponent();
+	if (!parentRoot) return;
+	
+	rootComponent->SetAttachParent(parentRoot);
 }
 	
 void AActor::DetachFromActor()
 {
-	std::shared_ptr<AActor> oldParent = attachParentActor.lock();
+	std::shared_ptr<AActor> oldParent =	attachParentActor.lock();
 
-	// 기존 부모의 자식목록에서 this를 제거
 	if (oldParent)
 	{
-		// 부모의 모든 자손목록을 대상으로
-		auto& siblingList = oldParent->attachedActors;
-		for (auto iterator = siblingList.begin(); iterator != siblingList.end(); ++iterator)
+		auto& children = oldParent->attachedActors;
+
+		for (auto iterator = children.begin(); iterator != children.end(); ++iterator)
 		{
-			// 자손목록중 자신을 발견하면 제거하고 루프 탈출
-			if ((*iterator).lock().get() == this)
+			std::shared_ptr<AActor> actor = iterator->lock();
+
+			if (actor.get() == this)
 			{
-				siblingList.erase(iterator);
+				children.erase(iterator);
 				break;
 			}
 		}
 	}
-		
-	// 제거후 기존 부모참조 변수 초기화
+
 	attachParentActor.reset();
-		
-	if (rootComponent)
-    {
-        Vector2 worldLocation = rootComponent->GetComponentLocation();
-        rootComponent->SetParent(std::weak_ptr<USceneComponent>());
-        rootComponent->SetWorldLocation(worldLocation);
-    }
+
+	if (!rootComponent) return;
+	
+	if (rootComponent) rootComponent->SetAttachParent(std::weak_ptr<USceneComponent>());
 }
 
 void AActor::SetLevel(std::weak_ptr<ULevel> newLevel)
@@ -138,27 +130,26 @@ void AActor::SetLevel(std::weak_ptr<ULevel> newLevel)
 	BindComponentOwners();	
 }
 
-Vector2 AActor::GetActorLocation() const
+Vector3 AActor::GetActorLocation() const
 {
-	return rootComponent ? rootComponent->GetComponentLocation() : Vector2::Zero;
+	if (!rootComponent) return Vector3::Zero;
+
+	return rootComponent->GetWorldLocation();
 }
 
-void AActor::SetActorLocation(const Vector2& newLocation)
-{
-	if (GetActorLocation() == newLocation) return;
-		
-	if (rootComponent) rootComponent->SetWorldLocation(newLocation);
-}	
-
-Vector2 AActor::GetPreviousActorLocation() const
-{
-	return rootComponent ? rootComponent->GetPreviousComponentLocation() : Vector2::Zero;
-}	
-
-void AActor::SavePreviousActorLocation()
+void AActor::SetActorLocation(const Vector3& newLocation)
 {
 	if (!rootComponent) return;
-	rootComponent->SetPreviousComponentLocation(rootComponent->GetComponentLocation());
+	if (GetActorLocation() == newLocation) return;
+
+	rootComponent->SetWorldLocation(newLocation);
+}
+
+Matrix4 AActor::GetActorWorldMatrix() const
+{
+	if (!rootComponent)	return Matrix4::Identity;
+
+	return rootComponent->GetWorldMatrix();
 }
 
 void AActor::SetRootComponent(const std::shared_ptr<USceneComponent>& newRootComponent)

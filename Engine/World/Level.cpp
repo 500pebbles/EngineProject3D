@@ -77,12 +77,3 @@ void ULevel::ProcessAddAndDestroyActors()
 	// 추가 완료되면 목록 정리.
 	requestedActors.clear();
 }
-
-void ULevel::SavePreviousActorStates()
-{
-	for (const auto& actor : actors)
-	{
-		if (!actor->IsActive()) continue; 
-		actor->SavePreviousActorLocation();
-	}
-}

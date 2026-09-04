@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include <Core/Core.h>
-#include <Math/Vector2.h>
+#include <Math/Vector3.h>
+#include <Math/Matrix4.h>
 #include <Core/Object.h>
 #include <memory>	
 #include <vector>
@@ -15,9 +16,8 @@ class ENGINE_API AActor : public UObject, public std::enable_shared_from_this<AA
 		
 	friend class ULevel;
 
-/* Event */	
 public:
-	AActor(const Vector2& location = Vector2::Zero);		
+	AActor(const Vector3& location = Vector3(0.f, 0.f, 0.f));		
 	virtual ~AActor();
 
 public:
@@ -29,31 +29,26 @@ public:
 	virtual void Destroy();
 	void QuitGame();
 	
-	inline bool HasBeganPlay() const { return hasBeganPlay; }
-	inline bool IsActive() const { return isActive && !hasExpired; }
-	inline bool HasExpired() const { return hasExpired; }	
+	bool HasBeganPlay() const { return hasBeganPlay; }
+	bool IsActive() const { return isActive && !hasExpired; }
+	bool HasExpired() const { return hasExpired; }	
 		
 	
-/* Level */				
 public:
-	inline std::shared_ptr<ULevel> GetLevel() const { return level.lock(); }		
-	
+	std::shared_ptr<ULevel> GetLevel() const { return level.lock(); }			
 	void SetLevel(std::weak_ptr<ULevel> newLevel);
 	
 			
-/* Location */	
+/* Transform */	
 public:
-	Vector2 GetActorLocation() const;
-	void SetActorLocation(const Vector2& newLocation);
-
-	Vector2 GetPreviousActorLocation() const;
-	void SavePreviousActorLocation();			
+	Vector3 GetActorLocation() const;
+	void SetActorLocation(const Vector3& newLocation);
+	Matrix4 GetActorWorldMatrix() const;
 	
 		
 /* Scene Graph */		
 public:
-	void AttachToActor(const std::shared_ptr<AActor>& newParent, bool keepWorldLocation = true);
-	
+	void AttachToActor(const std::shared_ptr<AActor>& newParent);	
 	void DetachFromActor();
 	
 	
@@ -67,8 +62,7 @@ public:
 	void SetRootComponent(const std::shared_ptr<USceneComponent>& newRootComponent);
 
 protected:
-	void ProcessAddComponents();
-	
+	void ProcessAddComponents();	
 	void BindComponentOwners();
 	
 	
@@ -91,8 +85,8 @@ protected:
 	std::shared_ptr<USceneComponent> rootComponent;			
 	
 protected:	
-	Vector2 initialLocation = Vector2::Zero;
-	
+	Vector3 initialLocation = Vector3::Zero;
+		
 	
 	
 /* 컴포넌트 생성 & 검색 Template */	

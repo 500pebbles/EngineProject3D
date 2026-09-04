@@ -61,12 +61,12 @@ bool CollisionSystem::Test(const std::shared_ptr<AActor>& left,	const std::share
 	if (!leftCollision || !rightCollision) return false;
 					
 	// left 액터 충돌박스의 현재/이전 위치
-	const Vector2 leftCurrent = leftCollision->GetComponentLocation();
-	const Vector2 leftPrevious = leftCollision->GetPreviousComponentLocation();
+	const Vector2 leftCurrent = Vector2::Zero;
+	const Vector2 leftPrevious = Vector2::Zero;
 
 	// right 액터 충돌박스의 현재/이전 위치
-	const Vector2 rightCurrent = rightCollision->GetComponentLocation();
-	const Vector2 rightPrevious = rightCollision->GetPreviousComponentLocation();
+	const Vector2 rightCurrent = Vector2::Zero;
+	const Vector2 rightPrevious = Vector2::Zero;
 
 	// 이전 프레임 위치와 현재 위치를 모두 포함하는 swept bounds 계산. (최악을 상정한 실제보다 긴 히트박스)
 	const float leftXMin = (leftCurrent.x < leftPrevious.x) ? leftCurrent.x : leftPrevious.x;

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Actor/Actor.h"
+#include "Component/BoxComponent.h"
 
 class ENGINE_API RenderPosition
 {

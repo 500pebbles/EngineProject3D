@@ -3,7 +3,7 @@
 #include <Component/BoxComponent.h>
 #include <Component/SpriteRendererComponent.h>
 
-ACharacter::ACharacter(const Vector2& location)
+ACharacter::ACharacter(const Vector3& location)
     : super(location)
 {
     collisionComponent = AddComponent<UBoxComponent>(Vector2(1.f, 1.f));

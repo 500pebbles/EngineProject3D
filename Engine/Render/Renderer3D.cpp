@@ -17,65 +17,162 @@ Renderer3D::Renderer3D(ConsoleScreen& screen)
 
 void Renderer3D::Render(const Mesh& mesh, float rotationAngle)
 {
-    _screen.Clear();
-        
-    /* 원본 Vertex */
-    const std::vector<Vector3>& vertices = mesh.GetVertices();
     
-    /* 원본 Vertex는 유지하고 이번 프레임에서만 변형을 겪을 임시 벡터 */
-    std::vector<Vector3> transformedVertices;
-    transformedVertices.reserve(vertices.size());
+    /* 이전 프레임 화면 초기화 */
+    _screen.Clear();
 
-    for (const Vector3& vertex : vertices)
+    /* 가상의 광원 방향 */
+    const Vector3 lightDirection = Vector3(-0.4f, 1.0f, -0.6f).Normalized();
+
+    /* 이번 프레임에 제출된 모든 RenderCommand 처리 */
+    for (const RenderCommand& command : _renderCommands)
     {
-        /* 임시버텍스에 적용할 회전값 적용 */
-        Vector3 transformed = vertex.RotateY(rotationAngle);
-        transformed = transformed.RotateX(rotationAngle * 0.5f);
+        /* 유효하지 않은 Mesh라면 무시 */
+        if (command.mesh == nullptr) continue;
 
-        /* 임시버텍스 배열에 값을 채움 */
-        transformedVertices.emplace_back(transformed);
+        const Mesh& mesh = *command.mesh;
+
+        /* ================================
+         * Step 1 : Local Space → World Space
+         * ================================ */
+
+        /* Mesh가 보유한 원본 Local Vertex */
+        const std::vector<Vector3>& vertices = mesh.GetVertices();
+
+        /* 원본 Vertex를 변경하지 않고
+         * 이번 프레임에서만 사용할 World Vertex 저장 */
+        std::vector<Vector3> transformedVertices;
+        transformedVertices.reserve(vertices.size());
+
+        for (const Vector3& vertex : vertices)
+        {
+            /* RenderCommand로 전달받은 World Matrix 적용
+             *
+             * Local Vertex
+             *      ↓
+             * Scale
+             *      ↓
+             * Rotation
+             *      ↓
+             * Translation
+             *      ↓
+             * World Vertex
+             */
+            Vector3 transformed = vertex * command.worldMatrix;
+
+            transformedVertices.emplace_back(transformed);
+        }
+
+        /* ================================
+         * Step 2 : Triangle 단위 처리
+         * ================================ */
+
+        for (const TriangleIndex& triangle : mesh.GetTriangles())
+        {
+            /* World Space상의 Triangle Vertex */
+            const Vector3& world0 =
+                transformedVertices[triangle.indices[0]];
+
+            const Vector3& world1 =
+                transformedVertices[triangle.indices[1]];
+
+            const Vector3& world2 =
+                transformedVertices[triangle.indices[2]];
+
+
+            /* ================================
+             * Step 3 : World Space → View Space
+             * ================================ */
+
+            const Matrix4& viewMatrix =
+                _camera.GetViewMatrix();
+
+            const Vector3 view0 = world0 * viewMatrix;
+            const Vector3 view1 = world1 * viewMatrix;
+            const Vector3 view2 = world2 * viewMatrix;
+
+
+            /* ================================
+             * Step 4 : Near Plane 검사
+             * ================================ */
+
+            constexpr float nearPlane = 0.1f;
+
+            if (view0.z <= nearPlane ||
+                view1.z <= nearPlane ||
+                view2.z <= nearPlane)
+            {
+                continue;
+            }
+
+
+            /* ================================
+             * Step 5 : Back-Face Culling
+             * ================================ */
+
+            /* 카메라 좌표계 기준 Triangle Normal */
+            const Vector3 viewNormal =
+                (view1 - view0)
+                .Cross(view2 - view0)
+                .Normalized();
+
+            /* 카메라 반대쪽을 바라보는 면은 그리지 않는다 */
+            if (viewNormal.z >= 0.0f)
+                continue;
+
+
+            /* ================================
+             * Step 6 : Lighting
+             * ================================ */
+
+            /* 광원 계산은 World Space 기준 */
+            const Vector3 worldNormal =
+                (world1 - world0)
+                .Cross(world2 - world0)
+                .Normalized();
+
+            /* Normal과 광원 방향이 가까울수록 밝게 */
+            const float diffuse =
+                std::max(
+                    0.0f,
+                    worldNormal.Dot(lightDirection)
+                );
+
+            /* 완전히 어두워지는 것을 방지하기 위한 최소 밝기 */
+            constexpr float ambientLight = 0.2f;
+
+            const float brightness =
+                ambientLight +
+                (1.0f - ambientLight) * diffuse;
+
+
+            /* ================================
+             * Step 7 : View Space → Screen Space
+             * ================================ */
+
+            const ScreenVertex screen0 = Project(view0);
+            const ScreenVertex screen1 = Project(view1);
+            const ScreenVertex screen2 = Project(view2);
+
+
+            /* ================================
+             * Step 8 : Rasterization
+             * ================================ */
+
+            DrawTriangle(
+                screen0,
+                screen1,
+                screen2,
+                GetShadeCharacter(brightness)
+            );
+        }
     }
 
-    /* 가상의 광원의 방향 정규화 */
-    const Vector3 lightDirection = Vector3{-0.4f, 1.0f, -0.6f}.Normalized();
 
-    /* 메쉬가 보유한 모든 Triangle에 대해 */
-    for (const TriangleIndex& triangle : mesh.GetTriangles())
-    {
-        /* 실제 월드에서의 버텍스 */
-        const Vector3& world0 = transformedVertices[triangle.indices[0]];
-        const Vector3& world1 = transformedVertices[triangle.indices[1]];
-        const Vector3& world2 = transformedVertices[triangle.indices[2]];
+    /* 이번 프레임에 제출된 명령 처리 완료 */
+    _renderCommands.clear();
 
-        /* 카메라 좌표계로 변환된 버텍스 */
-        const Vector3 view0 = _camera.WorldToView(world0);
-        const Vector3 view1 = _camera.WorldToView(world1);
-        const Vector3 view2 = _camera.WorldToView(world2);
-
-        /* 지나치게 가까운 범위는 렌더링하지 않도록 nearPlane을 설정 */
-        constexpr float nearPlane = 0.1f;
-        if (view0.z <= nearPlane || view1.z <= nearPlane || view2.z <= nearPlane)  continue;
-
-        /* 렌더링 여부를 위해 카메라 좌표계 기준으로 viewNormal을 구함 */
-        const Vector3 viewNormal = (view1 - view0).Cross(view2 - view0).Normalized();
-        if (viewNormal.z >= 0.0f) continue;
-        
-        /* 빛 연산을 위해 월드 좌표계 기준으로 worldNormal을 구함 */
-        const Vector3 worldNormal = (world1 - world0).Cross(world2 - world0).Normalized();
-
-        /* worldNormal과 lightDirection 벡터방향이 같을수록 (= 1에 가까울수록) 빛연산 가중치 */
-        const float diffuse = std::max(0.0f,worldNormal.Dot(lightDirection));
-
-        /* 최소밝기값 하한 설정 */
-        constexpr float ambientLight = 0.2f;
-
-        /* 최종 밝기값 */
-        const float brightness = ambientLight +(1.0f - ambientLight) * diffuse;
-
-        /* DrawTriangle과 Project라는 함수를 사용하는데, 이건 읽기전까지는 모름 */        
-        DrawTriangle(Project(view0),Project(view1),Project(view2),GetShadeCharacter(brightness));
-    }
-
+    /* 최종 화면 출력 */
     _screen.Present();
 }
 
@@ -95,7 +192,8 @@ Renderer3D::ScreenVertex Renderer3D::Project(const Vector3& viewPosition) const
 }
 
 void Renderer3D::DrawTriangle(const ScreenVertex& v0, const ScreenVertex& v1, const ScreenVertex& v2, char character)
-{
+{    
+    /* 삼각형을 완전히 감싸는 최소크기의 사각형 설정 */
     const int minX = std::max(0, static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x}))));
     const int maxX = std::min(_screen.GetWidth() - 1,static_cast<int>(std::ceil(std::max({v0.x, v1.x, v2.x}))));
     const int minY = std::max(0,static_cast<int>(std::floor(std::min({v0.y, v1.y, v2.y}))));
@@ -103,14 +201,15 @@ void Renderer3D::DrawTriangle(const ScreenVertex& v0, const ScreenVertex& v1, co
 
     const float area = Edge(v0, v1, v2.x, v2.y);
 
-    /* 넓이가 0이면 삼각형이 아니므로 생략 */
+    /* 넓이가 0이면 스킵 */
     if (std::abs(area) < 0.00001f) return;
 
+    /* 사각형 내부의 모든 픽셀에 대해서 */
     for (int y = minY; y <= maxY; ++y)
     {
         for (int x = minX; x <= maxX; ++x)
-        { 
-            /* 콘솔 칸의 중앙 좌표를 검사 */
+        {             
+            /* 사각형의 중앙 좌표를 검사 */
             const float pixelX = static_cast<float>(x) + 0.5f;
             const float pixelY = static_cast<float>(y) + 0.5f;
 
