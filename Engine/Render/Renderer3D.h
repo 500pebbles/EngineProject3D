@@ -1,59 +1,91 @@
 ﻿#pragma once
 
-#include "Camera/Camera.h"
-#include "ConsoleScreen.h"
-#include "Math/Matrix4.h"
-#include "Shape/Mesh.h"
-#include <Core/Core.h>  
+#include <Core/Core.h>
+#include <Camera/Camera.h>
+#include <Math/Matrix4.h>
+#include <Shape/Mesh.h>
+#include <memory>
+#include <vector>
+#include "RenderPosition.h"
 
-#include "ScreenBuffer.h"
 
+class ScreenBuffer;
 
 class ENGINE_API Renderer3D
 {
+/* ------------------------------------------ Struct ------------------------------------------*/    
+private:
+    /* Frame은 실제 그리기와 무관하고, 모든 글자들의 문자, 색상, 정렬구조를 담고있는 정보집합 */
+    struct Frame
+    {
+        Frame(int bufferCount);
+        
+        void Clear(const RenderPosition& screenSize);
+
+        std::unique_ptr<CHAR_INFO[]> charInfoArray;
+        std::unique_ptr<float[]> depthBuffer;
+    };
+
+    /* 화면상의 좌표값과 깊이값 */
+    struct ScreenVertex
+    {
+        float x = 0.0f;
+        float y = 0.0f;
+        float inverseDepth = 0.0f;
+    };
+
+    /* 액터가 드로우 정보를 담아 요청 */
     struct RenderCommand
     {
         const Mesh* mesh = nullptr;
         Matrix4 worldMatrix;
     };
-    
-private:
-    struct ScreenVertex
-    {
-        float x = 0.0f;
-        float y = 0.0f;
 
-        float inverseDepth = 0.0f;
-        
-    };
     
+    
+/* ------------------------------------------ Struct ------------------------------------------*/   
 public:
-    Renderer3D(ConsoleScreen& screen);
+    Renderer3D(const RenderPosition& screenSize);
+    ~Renderer3D();
+    
+    static Renderer3D& Get();
 
-    void Render(const Mesh& mesh, float rotationAngle);
+/* Draw Console */    
+public:
+    void Submit(const Mesh& mesh, const Matrix4& worldMatrix);
+    void Draw();
 
-    ScreenVertex Project(const Vector3& viewPosition) const;
+private:
+    void Clear();
+    void DrawRenderQueue();
+    void Present();
+    
+    ScreenBuffer* GetCurrentBuffer();
 
+/* Draw Triangle */    
+private:
     void DrawTriangle(const ScreenVertex& v0,const ScreenVertex& v1,const ScreenVertex& v2,char character);
 
     static float Edge(const ScreenVertex& start,const ScreenVertex& end,float x,float y);
-
+    
+    void SetPixel(int x,int y,float inverseDepth,char character);    
+    
     static char GetShadeCharacter(float brightness);
-    
 
-private:
-    ConsoleScreen& _screen;
-    
-    Camera _camera;
-    float _focalLength = 1.0f; 
+    ScreenVertex Project(const Vector3& viewPosition) const;
     
 private:
-    std::vector<RenderCommand> _renderCommands;
+    static Renderer3D* instance;
     
 private:
-    // 이중버퍼 구현을 위한 화면버퍼 2개
+    std::vector<RenderCommand> renderQueue;
+    RenderPosition screenSize;
+    std::unique_ptr<Frame> frame;
     std::unique_ptr<ScreenBuffer> screenBufferArray[2];
-
-    // 화면 버퍼 인덱스
     int currentBufferIndex = 0;
+    
+    Camera camera;
+    float focalLength = 1.0f;
 };
+
+

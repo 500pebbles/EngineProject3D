@@ -31,32 +31,24 @@ public:
 	
 	bool HasBeganPlay() const { return hasBeganPlay; }
 	bool IsActive() const { return isActive && !hasExpired; }
-	bool HasExpired() const { return hasExpired; }	
-		
+	bool HasExpired() const { return hasExpired; }			
 	
 public:
 	std::shared_ptr<ULevel> GetLevel() const { return level.lock(); }			
 	void SetLevel(std::weak_ptr<ULevel> newLevel);
-	
-			
-/* Transform */	
+				
 public:
 	Vector3 GetActorLocation() const;
 	void SetActorLocation(const Vector3& newLocation);
 	Matrix4 GetActorWorldMatrix() const;
 	
-		
-/* Scene Graph */		
 public:
 	void AttachToActor(const std::shared_ptr<AActor>& newParent);	
 	void DetachFromActor();
-	
-	
-/* Component */			
-	std::shared_ptr<AActor> GetAttachParentActor() const { return attachParentActor.lock(); }
-	
-	const std::vector<std::weak_ptr<AActor>>& GetAttachedActors() const { return attachedActors; }
-	
+		
+public:
+	std::shared_ptr<AActor> GetAttachParentActor() const { return attachParentActor.lock(); }	
+	const std::vector<std::weak_ptr<AActor>>& GetAttachedActors() const { return attachedActors; }	
 	std::shared_ptr<USceneComponent> GetRootComponent() const{ return rootComponent; }
 	
 	void SetRootComponent(const std::shared_ptr<USceneComponent>& newRootComponent);
@@ -66,7 +58,7 @@ protected:
 	void BindComponentOwners();
 	
 	
-/* Variables */	
+	
 protected:
 	bool hasBeganPlay = false;
 	bool isActive = true;
@@ -87,6 +79,7 @@ protected:
 protected:	
 	Vector3 initialLocation = Vector3::Zero;
 		
+	
 	
 	
 /* 컴포넌트 생성 & 검색 Template */	

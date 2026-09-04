@@ -121,7 +121,6 @@ xcopy ..\Config\* $(OutDir)..\Config\ /e /y /i</Command>
     <ClCompile Include="Math\Vector4.cpp" />
     <ClCompile Include="Render\ConsoleScreen.cpp" />
     <ClCompile Include="Render\Renderer3D.cpp" />
-    <ClCompile Include="Render\ScreenBuffer3D.cpp" />
     <ClCompile Include="Shape\Mesh.cpp" />
     <ClCompile Include="World\Level.cpp" />
     <ClCompile Include="World\World.cpp" />
@@ -153,7 +152,6 @@ xcopy ..\Config\* $(OutDir)..\Config\ /e /y /i</Command>
     <ClInclude Include="Math\Vector4.h" />
     <ClInclude Include="Render\ConsoleScreen.h" />
     <ClInclude Include="Render\Renderer3D.h" />
-    <ClInclude Include="Render\ScreenBuffer3D.h" />
     <ClInclude Include="Shape\Mesh.h" />
     <ClInclude Include="Util\FDurationTimer.h" />
     <ClInclude Include="World\Level.h" />

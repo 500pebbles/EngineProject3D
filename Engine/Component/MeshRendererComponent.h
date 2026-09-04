@@ -1,10 +1,24 @@
 ﻿#pragma once
 #include <Core/Core.h>
-#include "ActorComponent.h"
+#include "PrimitiveComponent.h"
+#include "Shape/Mesh.h"
 
-class ENGINE_API MeshRendererComponent : UActorComponent
+class ENGINE_API UMeshRendererComponent : UPrimitiveComponent
 {
 public:
-    TYPE_DECLARATIONS(MeshRendererComponent, UActorComponent)
-    
+    TYPE_DECLARATIONS(UMeshRendererComponent, UPrimitiveComponent)
+
+public:
+    UMeshRendererComponent();
+    virtual ~UMeshRendererComponent() = default;
+
+public:
+    virtual void Draw() override;
+
+    const Mesh& GetMesh() const { return mesh; }
+
+    void SetMesh(const Mesh& newMesh) { mesh = newMesh; }
+
+private:
+    Mesh mesh;
 };
