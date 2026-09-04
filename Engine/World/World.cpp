@@ -18,6 +18,7 @@ void UWorld::OnInitialized()
     hasInitialized = true;
     for (auto level : levels)
     {
+        level->SetWorld(shared_from_this());
         level->OnInitialized();
     }
 }
@@ -44,6 +45,18 @@ void UWorld::Draw()
     {
         level->Draw();
     }
+}
+
+void UWorld::SetActiveCamera(const std::shared_ptr<UCameraComponent>& camera)
+{
+    if (!camera) return;
+    activeCamera = camera;
+}
+
+std::shared_ptr<UCameraComponent> UWorld::GetActiveCamera() const
+{
+    if (!activeCamera) return nullptr;
+    return activeCamera;
 }
 
 void UWorld::ProcessAddAndDestroyActors()

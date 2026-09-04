@@ -6,7 +6,7 @@ void TestWorld::OnInitialized()
 {    
     UWorld::OnInitialized();
     
-    SpawnActor<PlayerActor>(Vector3(-12, -12, -12));
+    SpawnActor<PlayerActor>(Vector3(3, 3, 3));
     
     cube1 = SpawnActor<CubeActor>(Vector3::Zero);   
     cube2 = SpawnActor<CubeActor>(Vector3(1,-1,3));

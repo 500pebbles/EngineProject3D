@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <Core/Core.h>
-#include <Camera/Camera.h>
 #include <Math/Matrix4.h>
 #include <Shape/Mesh.h>
 #include <memory>
@@ -9,6 +8,7 @@
 #include "RenderPosition.h"
 
 
+class UWorld;
 class UCameraComponent;
 class ScreenBuffer;
 
@@ -76,10 +76,9 @@ private:
     ScreenVertex Project(const Vector3& viewPosition) const;
     
     
-/* Camera */    
+/* World for Camera */    
 public:
-    void SetCamera(const std::shared_ptr<UCameraComponent>& newCamera) { cameraComponent = newCamera; }
-
+    void SetWorld(const std::shared_ptr<UWorld>& newWorld) { world = newWorld; }
     
 private:
     static Renderer3D* instance;
@@ -89,9 +88,9 @@ private:
     RenderPosition screenSize;
     std::unique_ptr<Frame> frame;
     std::unique_ptr<ScreenBuffer> screenBufferArray[2];
-    int currentBufferIndex = 0;
+    int currentBufferIndex = 0; 
     
-    std::shared_ptr<UCameraComponent> cameraComponent;
+    std::weak_ptr<UWorld> world;    
     float focalLength = 1.0f;
 };
 

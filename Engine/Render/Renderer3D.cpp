@@ -9,6 +9,7 @@
 
 #include "ScreenBuffer.h"
 #include "Component/CameraComponent.h"
+#include "World/World.h"
 
 
 // -------------------------- Frame -------------------------- //
@@ -102,10 +103,13 @@ void Renderer3D::Clear()
 void Renderer3D::DrawRenderQueue()
 {
     const Vector3 lightDirection = Vector3{-0.4f, 1.0f, -0.6f}.Normalized();
-    const std::shared_ptr<UCameraComponent> camera = cameraComponent;
+    
+    const std::shared_ptr<UWorld> currentWorld = world.lock();
+    if (!currentWorld) return;
+    const std::shared_ptr<UCameraComponent> camera = currentWorld->GetActiveCamera();
     if (!camera) return;
 
-    const Matrix4 viewMatrix = camera->GetViewMatrix();
+    const Matrix4 viewMatrix = camera->GetViewMatrix();        
 
     for (const RenderCommand& command : renderQueue)
     {

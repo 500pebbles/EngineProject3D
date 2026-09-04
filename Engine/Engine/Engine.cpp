@@ -74,6 +74,7 @@ void Engine::Run()
 				if (mainWorld) mainWorld.reset();
 
 				mainWorld = nextWorld;
+				renderer->SetWorld(mainWorld);
 				nextWorld.reset();
 			}
 			

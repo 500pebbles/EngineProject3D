@@ -51,8 +51,7 @@ void ULevel::ProcessAddAndDestroyActors()
 		if (actor) actor->ProcessAddComponents();
 	}
 		
-	/* Step 1 : 액터 제거 처리 */	
-		
+	/* Step 1 : 액터 제거 처리 */			
 	for (auto iterator = actors.begin(); iterator != actors.end();)
 	{
 		// 제거 요청된 액터인지 확인 후 제거

@@ -21,6 +21,9 @@ public:
 	virtual void BeginPlay();
 	virtual void Tick(float deltaTime);
 	virtual void Draw();		
+	
+	std::shared_ptr<UWorld> GetWorld() const { return world.lock(); }			
+	void SetWorld(std::weak_ptr<UWorld> newWorld) { world = newWorld; }
 		
 public:
 	inline bool HasInitialized() const { return hasInitialized; }
@@ -28,12 +31,14 @@ public:
 protected:
 	void ProcessAddAndDestroyActors();
 	
-public:
+public:	
+	std::weak_ptr<UWorld> world;	
+	
 	std::vector<std::shared_ptr<AActor>> actors;
 
 	std::vector<std::shared_ptr<AActor>> requestedActors;		
 
 protected:
 	bool hasInitialized = false;
-		
+	
 };

@@ -103,10 +103,8 @@ xcopy ..\Config\* $(OutDir)..\Config\ /e /y /i</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor\Actor.cpp" />
-    <ClCompile Include="Actor\CameraActor.cpp" />
     <ClCompile Include="Actor\Character.cpp" />
     <ClCompile Include="Actor\Pawn.cpp" />
-    <ClCompile Include="Camera\Camera.cpp" />
     <ClCompile Include="Component\BoxComponent.cpp" />
     <ClCompile Include="Component\ActorComponent.cpp" />
     <ClCompile Include="Component\CameraComponent.cpp" />
@@ -132,10 +130,8 @@ xcopy ..\Config\* $(OutDir)..\Config\ /e /y /i</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor\Actor.h" />
-    <ClInclude Include="Actor\CameraActor.h" />
     <ClInclude Include="Actor\Character.h" />
     <ClInclude Include="Actor\Pawn.h" />
-    <ClInclude Include="Camera\Camera.h" />
     <ClInclude Include="Component\BoxComponent.h" />
     <ClInclude Include="Component\ActorComponent.h" />
     <ClInclude Include="Component\CameraComponent.h" />

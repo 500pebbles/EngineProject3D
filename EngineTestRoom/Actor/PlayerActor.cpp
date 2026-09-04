@@ -2,6 +2,8 @@
 #include <Component/SceneComponent.h>
 #include <Component/CameraComponent.h>
 #include <Render/Renderer3D.h>
+#include <World/World.h>
+#include <World/Level.h>
 
 PlayerActor::PlayerActor(const Vector3& location)
     : super(location)
@@ -24,7 +26,7 @@ void PlayerActor::BeginPlay()
 {
     AActor::BeginPlay();
     
-    Renderer3D::Get().SetCamera(cameraComponent);
+    GetLevel()->GetWorld()->SetActiveCamera(cameraComponent);
 }
 
 void PlayerActor::Tick(float deltaTime)
