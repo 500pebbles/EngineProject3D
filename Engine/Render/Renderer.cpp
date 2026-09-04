@@ -50,7 +50,6 @@ Renderer::Renderer(const RenderPosition& screenSize)
 	assert(!instance && "instance should be null");
 	instance = this;
 	
-    
     // Frame 객체 생성
 	const int bufferCount = screenSize.x * screenSize.y;  
 	frame = std::make_unique<Frame>(bufferCount);  // Frame은 화면에 채울 문자 전체를 보유하기에 화면크기 = 배열크기
@@ -122,6 +121,21 @@ void Renderer::Clear()
 
 void Renderer::DrawRenderQueue()
 {
+	/*
+	 * 새 Draw
+	 * 
+	 */
+	
+	
+	
+	
+	/*
+	 * 기존 Draw
+	 * 
+	 */
+	
+	
+	
     // RenderQueue를 순회하며 그리기 명령 실행
 	for (const RenderCommand& command : renderQueue)
 	{
@@ -166,7 +180,7 @@ void Renderer::DrawRenderQueue()
 			frame->sortingOrderArray[index] = command.sortingOrder;                
 		}
 	}
-	 
+		 
 	/* Step 3 : 변환된 배열을 스크린버퍼에 넘겨주며 실질적인 콘솔에 드로잉 */
 
     // 글자 2차원배열 정보값을 바탕으로, 현재 ScreenBuffer를 불러와 콘솔에 드로우

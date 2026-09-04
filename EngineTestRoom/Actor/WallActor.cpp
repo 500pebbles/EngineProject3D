@@ -4,7 +4,6 @@
 #include <Component/SpriteRendererComponent.h>
 #include <Engine/Engine.h>
 #include <Math/Color.h>
-
 #include "TestActor.h"
 #include <Render/Renderer.h>
 

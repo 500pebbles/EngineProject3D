@@ -32,7 +32,7 @@ class ENGINE_API Renderer
 		Color color = Color::White;							 // 색상            
 		int sortingOrder = -1;								 // 정렬순서 (같은 위치에 문자가 겹칠 경우 클수록 우선순위) 
 	};
-
+	
 	
 public:
 	Renderer(const RenderPosition& screenSize);
@@ -45,6 +45,9 @@ public:
 		Color color = Color::White,
 		int sortingOrder = 0
 	); 
+	
+	void Submit3D(
+		);
 
 	// Engine에서 호출할 실질적인 드로우
 	void Draw();
