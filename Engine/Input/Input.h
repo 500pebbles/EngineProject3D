@@ -52,4 +52,19 @@ private:
 				
 	/* 마우스 옵션 */
 	Vector2 mousePosition = Vector2::Zero; // 마우스 포인터의 콘솔상 현재 좌표
+	
+	
+/* Additional Mouse Tracking */
+public:
+	const Vector2& GetMouseDelta() const;
+	void SetMouseCaptured(bool captured);
+
+private:
+	void UpdateMouseDelta();
+
+private:
+	Vector2 mouseDelta = {};
+	bool isMouseCaptured = false;
+	bool isMouseCentered = false;
+	bool hasConsoleFocus = true;
 };

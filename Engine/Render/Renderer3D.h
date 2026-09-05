@@ -4,8 +4,10 @@
 #include <Math/Matrix4.h>
 #include <Shape/Mesh.h>
 #include <memory>
+#include <string>
 #include <vector>
 #include "RenderPosition.h"
+#include "Math/Color.h"
 
 
 class UWorld;
@@ -36,10 +38,18 @@ private:
     };
 
     /* 액터가 드로우 정보를 담아 요청 */
-    struct RenderCommand
+    struct RenderCommand3D
     {
         const Mesh* mesh = nullptr;
         Matrix4 worldMatrix;
+    };
+    
+    /* UI 전용 렌더 커맨드 */
+    struct RenderCommand2D
+    {
+        std::string image;         
+        RenderPosition position = RenderPosition(0,0);          
+        Color color = Color::White;
     };
 
     
@@ -54,6 +64,7 @@ public:
 /* Draw Console */    
 public:
     void Submit(const Mesh& mesh, const Matrix4& worldMatrix);
+    void SubmitUI(const std::string& image, const RenderPosition& position, Color color = Color::White); 
     void Draw();
 
 private:
@@ -84,12 +95,13 @@ private:
     static Renderer3D* instance;
     
 private:
-    std::vector<RenderCommand> renderQueue;
+    std::vector<RenderCommand3D> renderQueue;
     RenderPosition screenSize;
     std::unique_ptr<Frame> frame;
     std::unique_ptr<ScreenBuffer> screenBufferArray[2];
     int currentBufferIndex = 0; 
     
+    std::vector<RenderCommand2D> renderQueueUI;
     std::weak_ptr<UWorld> world;    
     float focalLength = 1.0f;
 };

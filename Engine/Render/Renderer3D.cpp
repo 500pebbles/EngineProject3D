@@ -57,17 +57,15 @@ Renderer3D::Renderer3D(const RenderPosition& screenSize)
 
     SetConsoleActiveScreenBuffer(screenBufferArray[0]->GetBuffer());
 
-    /* Perspective Projection 설정 */
+    /* Projection변환 설정값 */
     constexpr float pi = 3.14159265359f;
     const float fieldOfView = 45.0f * pi / 180.0f;
-
     focalLength = (static_cast<float>(screenSize.y) * 0.5f) / std::tan(fieldOfView * 0.5f);
 }
 
 Renderer3D::~Renderer3D()
 {
     instance = nullptr;
-
     SetConsoleActiveScreenBuffer(GetStdHandle(STD_OUTPUT_HANDLE));
 }
 
@@ -80,11 +78,21 @@ Renderer3D& Renderer3D::Get()
 
 void Renderer3D::Submit(const Mesh& mesh, const Matrix4& worldMatrix)
 {
-    RenderCommand command;
+    RenderCommand3D command;
     command.mesh = &mesh;
     command.worldMatrix = worldMatrix;
 
     renderQueue.emplace_back(command);
+}
+
+void Renderer3D::SubmitUI(const std::string& image, const RenderPosition& position, Color color)
+{
+    RenderCommand2D command;
+    command.image = image;
+    command.position = position;
+    command.color = color;
+
+    renderQueueUI.emplace_back(command);
 }
 
 void Renderer3D::Draw()
@@ -102,16 +110,17 @@ void Renderer3D::Clear()
 
 void Renderer3D::DrawRenderQueue()
 {
+    /* 가상의 광원 설정 */
     const Vector3 lightDirection = Vector3{-0.4f, 1.0f, -0.6f}.Normalized();
     
+    /* 월드의 카메라 얻어오기 */
     const std::shared_ptr<UWorld> currentWorld = world.lock();
     if (!currentWorld) return;
     const std::shared_ptr<UCameraComponent> camera = currentWorld->GetActiveCamera();
     if (!camera) return;
-
     const Matrix4 viewMatrix = camera->GetViewMatrix();        
 
-    for (const RenderCommand& command : renderQueue)
+    for (const RenderCommand3D& command : renderQueue)
     {
         if (command.mesh == nullptr) continue;
 
@@ -140,13 +149,19 @@ void Renderer3D::DrawRenderQueue()
             const Vector3 view1 = world1 * viewMatrix;
             const Vector3 view2 = world2 * viewMatrix;
 
+            
             /* Near Plane 컬링 */
             constexpr float nearPlane = 0.1f;
             if (view0.z <= nearPlane || view1.z <= nearPlane || view2.z <= nearPlane) continue;
-
+            
+            /* Far Plane 컬링 */
+            constexpr float fatPlane = 50.f;
+            if (view0.z >= fatPlane || view1.z >= fatPlane || view2.z >= fatPlane) continue;
+            
+                
             /* Back 컬링 */
             const Vector3 viewNormal = (view1 - view0).Cross(view2 - view0).Normalized();
-            if (viewNormal.z >= 0.0f) continue;
+            //if (viewNormal.z >= 0.0f) continue;
 
             /* 광원 처리로 문자열 설정 */
             const Vector3 worldNormal = (world1 - world0).Cross(world2 - world0).Normalized();
@@ -164,9 +179,32 @@ void Renderer3D::DrawRenderQueue()
         }
     }
 
+    /* UI 렌더링 */
+    for (const RenderCommand2D& command : renderQueueUI)
+    {
+        if (command.image.empty()) continue;
+        if (command.position.y <0 || command.position.y >= screenSize.y) continue;
+        const int length = static_cast<int>(command.image.length());                       
+        const int startX = command.position.x;                    
+        const int endX = startX + length - 1;                           
+        if (endX < 0 || startX >= screenSize.x) continue;
+        const int visibleStartX = startX < 0 ? 0 : startX;
+        const int visibleEndX = endX >= screenSize.x ? screenSize.x -1 : endX;
+        
+        for (int x = visibleStartX; x <= visibleEndX; ++x)
+        {
+            const int sourceIndex = x - startX;
 
+            const int index = (command.position.y * screenSize.x) + x; 
+
+            frame->charInfoArray[index].Char.AsciiChar = command.image[sourceIndex];     
+            frame->charInfoArray[index].Attributes = static_cast<DWORD>(command.color);
+        }
+        
+    }
     /* 완성된 Frame 전체를 ScreenBuffer에 전달 */
     GetCurrentBuffer()->Draw(frame->charInfoArray.get());
+    
 
     /* 이번 프레임 RenderCommand 제거 */
     renderQueue.clear();
@@ -213,11 +251,8 @@ void Renderer3D::DrawTriangle(const ScreenVertex& v0, const ScreenVertex& v1, co
             /* Triangle 외부 */
             if (weight0 < 0.0f || weight1 < 0.0f || weight2 < 0.0f) continue;
 
-            /* 세 Vertex의 깊이를 보간 */
-            const float inverseDepth =
-                weight0 * v0.inverseDepth +
-                weight1 * v1.inverseDepth +
-                weight2 * v2.inverseDepth;
+            /* 세 Vertex의 깊이 보간으로 Depth값 생성 */
+            const float inverseDepth = weight0 * v0.inverseDepth + weight1 * v1.inverseDepth + weight2 * v2.inverseDepth;
 
             SetPixel(x, y, inverseDepth, character);
         }
@@ -236,15 +271,11 @@ void Renderer3D::SetPixel(int x, int y, float inverseDepth, char character)
     frame->depthBuffer[index] = inverseDepth;
 
     frame->charInfoArray[index].Char.AsciiChar = character;
-    frame->charInfoArray[index].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    frame->charInfoArray[index].Attributes =  static_cast<DWORD>(Color::White);
 }
 
 
-float Renderer3D::Edge(
-    const ScreenVertex& start,
-    const ScreenVertex& end,
-    float x,
-    float y)
+float Renderer3D::Edge(const ScreenVertex& start, const ScreenVertex& end, float x, float y)
 {
     return (x - start.x) * (end.y - start.y) - (y - start.y) * (end.x - start.x);
 }
@@ -253,11 +284,8 @@ float Renderer3D::Edge(
 char Renderer3D::GetShadeCharacter(float brightness)
 {
     static const std::string shadeCharacters = ".:-=+*#%@";
-
     brightness = std::clamp(brightness, 0.0f, 1.0f);
-
-    const int index =
-        static_cast<int>(brightness * static_cast<float>(shadeCharacters.size() - 1));
+    const int index = static_cast<int>(brightness * static_cast<float>(shadeCharacters.size() - 1));
 
     return shadeCharacters[index];
 }
@@ -265,7 +293,6 @@ char Renderer3D::GetShadeCharacter(float brightness)
 void Renderer3D::Present()
 {
     SetConsoleActiveScreenBuffer(GetCurrentBuffer()->GetBuffer());
-
     currentBufferIndex = 1 - currentBufferIndex;
 }
 

@@ -15,5 +15,5 @@ void CubeActor::Tick(float deltaTime)
 {
     AActor::Tick(deltaTime);    
     
-    SetActorRotation(GetActorRotation() + Vector3(1,0,0));
+    //SetActorRotation(GetActorRotation() + Vector3(0,0,1));
 }

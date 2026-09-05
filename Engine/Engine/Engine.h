@@ -82,4 +82,11 @@ protected:
 		
 	std::unique_ptr<CollisionSystem> collisionSystem;
 	
+	
+private:
+	void CountFPS(float deltaTime); 
+	int frameCount = 0; 
+	float fpsTimer = 0.0f; 
+	int currentFps = 0;
+	
 };

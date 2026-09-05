@@ -2,15 +2,15 @@
 #include <cassert>
 #include <Windows.h>
 
-// static 변수 초기화.
 Input* Input::instance = nullptr;
+
+
 
 Input::Input()
 {
 	/* Part 1 : 현재 생성중인 Input 객체를 싱글톤 인스턴스로 등록 */
 	assert(!instance && "instance should be null here.");
 	instance = this;
-
 	
 	/* Part 2 : InputHandle 정보값 등록 */
 	inputHandle = GetStdHandle(STD_INPUT_HANDLE);
@@ -144,19 +144,23 @@ void Input::ProcessInput()
 
 			/* 콘솔 창이 Focus 되지 않을경우 입력 방지 */
 			case FOCUS_EVENT:					
-				if (!record.Event.FocusEvent.bSetFocus) // 콘솔 창이 입력 포커스를 잃었는지 확인.
+				hasConsoleFocus = record.Event.FocusEvent.bSetFocus != FALSE;
+
+				if (!hasConsoleFocus)
 				{
-					// 포커스를 잃는 동안 KeyUp 이벤트가 누락되어
-					// 키가 계속 눌린 상태로 남는 것을 방지.
 					for (KeyState& state : keyStates)
 					{
 						state.isKeyDown = false;
 					}
+
+					isMouseCentered = false;
 				}
+
 				break;
 			}
 		}
 	}
+	UpdateMouseDelta(); 
 }
 	
 void Input::SavePreviousInput()
@@ -167,3 +171,53 @@ void Input::SavePreviousInput()
 		state.wasKeyDown = state.isKeyDown;
 	}
 }		
+
+
+/* Additional Mouse Tracking */
+const Vector2& Input::GetMouseDelta() const
+{
+	return mouseDelta;
+}
+
+void Input::SetMouseCaptured(bool captured)
+{
+	isMouseCaptured = captured;
+	isMouseCentered = false;
+	mouseDelta = {};
+}
+
+void Input::UpdateMouseDelta()
+{
+	mouseDelta = {};
+
+	if (!isMouseCaptured || !hasConsoleFocus) return;
+
+	// GetConsoleWindow() 대신 실제 화면에 보이는 활성 창 사용
+	HWND window = GetForegroundWindow();
+	if (!window) return;
+
+	RECT clientRect;
+	if (!GetClientRect(window, &clientRect)) return;
+
+	POINT centerPosition = {
+		(clientRect.left + clientRect.right) / 2,
+		(clientRect.top + clientRect.bottom) / 2
+	};
+
+	if (!ClientToScreen(window, &centerPosition)) return;
+
+	if (!isMouseCentered)
+	{
+		SetCursorPos(centerPosition.x, centerPosition.y);
+		isMouseCentered = true;
+		return;
+	}
+
+	POINT cursorPosition;
+	if (!GetCursorPos(&cursorPosition)) return;
+
+	mouseDelta.x = static_cast<float>(cursorPosition.x - centerPosition.x);
+	mouseDelta.y = static_cast<float>(cursorPosition.y - centerPosition.y);
+
+	SetCursorPos(centerPosition.x, centerPosition.y);
+}

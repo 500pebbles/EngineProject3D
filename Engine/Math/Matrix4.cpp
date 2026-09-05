@@ -128,7 +128,6 @@ Matrix4 Matrix4::RotationZ(float angle)
 
 Matrix4 Matrix4::Scale(float x, float y, float z)
 {
-	// 반환용 변수.
 	Matrix4 m;
 
 	m.m00 = x;		m.m01 = 0.0f;	m.m02 = 0.0f;	m.m03 = 0.0f;

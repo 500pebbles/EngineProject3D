@@ -121,21 +121,6 @@ void Renderer::Clear()
 
 void Renderer::DrawRenderQueue()
 {
-	/*
-	 * 새 Draw
-	 * 
-	 */
-	
-	
-	
-	
-	/*
-	 * 기존 Draw
-	 * 
-	 */
-	
-	
-	
     // RenderQueue를 순회하며 그리기 명령 실행
 	for (const RenderCommand& command : renderQueue)
 	{

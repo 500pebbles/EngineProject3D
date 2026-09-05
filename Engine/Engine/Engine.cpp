@@ -51,23 +51,18 @@ void Engine::Run()
 		/* 메인 프로세스 */
 		if (deltaTime >= oneFrameTime)
 		{
-			ProcessInput();
-			
+			ProcessInput();			
 			OnInitialized();
-
 			BeginPlay();
-
 			Tick(deltaTime);
-
 			ProcessCollision();
-
 			Draw();
 			
-
 			/* Draw가 끝나는 순간 현재 프레임 처리는 완료됨. 
 			 * 이하 작업은 다음 프레임을 위한 작업들 
 			 * 레벨 교체 요청, 액터 추가삭제 요청, 현재프레임 Input저장 */
 			
+			CountFPS(deltaTime);
 			
 			if (nextWorld)    // 월드 교체
 			{
@@ -213,4 +208,15 @@ void Engine::LoadEngineSetting()
 	
 	fclose(file);
 	file = nullptr;		
+}
+
+
+void Engine::CountFPS(float deltaTime)
+{
+	frameCount++;
+	fpsTimer += deltaTime;
+	currentFps = frameCount / fpsTimer; 
+	frameCount = 0;
+	fpsTimer = 0.0f;
+	Renderer3D::Get().SubmitUI("FPS " + std::to_string(currentFps), RenderPosition(0, 0), Color::Red);	
 }
